@@ -9,7 +9,6 @@ import { JwtService } from '@nestjs/jwt';
 @WebSocketGateway()
 export class WsGateway implements OnGatewayConnection {
   constructor(private jwt: JwtService) {}
-
   async handleConnection(client: WebSocket, request: IncomingMessage) {
     const token = request.headers['token'] as string;
     console.log('Token:', token);

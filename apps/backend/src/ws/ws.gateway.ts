@@ -5,17 +5,19 @@ import {
 } from '@nestjs/websockets';
 import { IncomingMessage } from 'http';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 @WebSocketGateway()
 export class WsGateway implements OnGatewayConnection {
-  constructor(private jwt: JwtService) {}
+  constructor(
+    private jwt: JwtService,
+    private configService: ConfigService,
+  ) {}
   async handleConnection(client: WebSocket, request: IncomingMessage) {
     const token = request.headers['token'] as string;
-    console.log('Token:', token);
     const checker: object = await this.jwt.verifyAsync(token, {
-      secret: 'testing',
+      secret: this.configService.get<string>('JWT_SECRET'),
     });
-    console.log(checker);
     if (!checker) {
       client.close();
     }

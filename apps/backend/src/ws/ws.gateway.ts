@@ -7,7 +7,6 @@ import { IncomingMessage } from 'http';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MarketDataRouter } from 'src/market-data/market-data.router';
-import { UnauthorizedException } from '@nestjs/common';
 
 @WebSocketGateway()
 export class WsGateway implements OnGatewayConnection {

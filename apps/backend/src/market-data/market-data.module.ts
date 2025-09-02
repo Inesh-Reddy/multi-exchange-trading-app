@@ -5,5 +5,6 @@ import { MarketDataRouter } from './market-data.router';
 @Module({
   controllers: [],
   providers: [MarketDataRouter, MarketDataService],
+  exports: [MarketDataRouter],
 })
 export class MarketDataModule {}

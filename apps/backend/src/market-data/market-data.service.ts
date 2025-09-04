@@ -32,10 +32,10 @@ export class MarketDataService {
       console.log('✅ Connected to Binance WebSocket');
     });
 
-    ws.on('message', async (raw): Promise<any> => {
+    ws.on('message', async (raw) => {
       try {
         const msg = JSON.parse(raw.toString());
-
+        // console.log(msg);
         const symbol = msg.s;
         const price = parseFloat(msg.p);
         const qty = parseFloat(msg.q);

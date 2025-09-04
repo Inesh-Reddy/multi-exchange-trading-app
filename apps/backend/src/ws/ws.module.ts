@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { WsGateway } from './ws.gateway';
+import { MarketDataGateway } from './ws.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MarketDataModule } from 'src/market-data/market-data.module';
@@ -16,6 +16,6 @@ import { MarketDataModule } from 'src/market-data/market-data.module';
       inject: [ConfigService],
     }),
   ],
-  providers: [WsGateway, ConfigService],
+  providers: [MarketDataGateway, ConfigService],
 })
 export class WsModule {}

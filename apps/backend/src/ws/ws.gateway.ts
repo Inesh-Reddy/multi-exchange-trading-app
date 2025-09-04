@@ -1,47 +1,56 @@
-import { OnGatewayConnection, WebSocketGateway } from '@nestjs/websockets';
-import { IncomingMessage } from 'http';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { MarketDataRouter } from 'src/market-data/market-data.router';
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  OnGatewayInit,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
+import { Server, WebSocket } from 'ws';
+import { MarketDataService } from 'src/market-data/market-data.service';
 
-@WebSocketGateway()
-export class WsGateway implements OnGatewayConnection {
-  constructor(
-    private jwt: JwtService,
-    private configService: ConfigService,
-    private marketData: MarketDataRouter,
-  ) {}
+@WebSocketGateway({ path: '/md' }) // your FE connects here
+export class MarketDataGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
+  @WebSocketServer()
+  server: Server;
 
-  async handleConnection(client: WebSocket, request: IncomingMessage) {
-    const token = request.headers['token'] as string;
+  constructor(private readonly marketData: MarketDataService) {}
 
-    try {
-      const checker: { any } = await this.jwt.verify(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-      });
-
-      if (!checker) {
-        client.close();
-        return;
-      }
-
-      client.send(JSON.stringify({ data: 'Client connected successfully' }));
-
-      client.onmessage = (raw) => {
-        console.log('Got message from client:', raw.data);
-
-        const ws = this.marketData.getMarketData();
-        ws.onmessage = (event) => {
-          const msgToSend: object = {
-            type: 'trade',
-            payload: event.data,
-          };
-          client.send(JSON.stringify(msgToSend));
-        };
+  afterInit() {
+    console.log('✅ WS Gateway ready');
+    // pipe Binance trades into our gateway
+    this.marketData.getMarketData().on('message', (raw) => {
+      const msg = JSON.parse(raw.toString());
+      const payload = {
+        type: 'marketData',
+        payload: {
+          symbol: msg.s,
+          price: parseFloat(msg.p),
+          qty: parseFloat(msg.q),
+          ts: msg.T,
+        },
       };
-    } catch (error) {
-      console.log(error);
-      client.close();
-    }
+      this.server.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify(payload));
+        }
+      });
+    });
+  }
+
+  handleConnection(client: WebSocket) {
+    console.log('🔌 FE connected');
+  }
+
+  handleDisconnect(client: WebSocket) {
+    console.log('❌ FE disconnected');
+  }
+
+  @SubscribeMessage('subscribe')
+  onSubscribe(client: WebSocket, data: any) {
+    console.log('📩 FE subscription:', data);
+    // (later you can filter by symbol here)
   }
 }

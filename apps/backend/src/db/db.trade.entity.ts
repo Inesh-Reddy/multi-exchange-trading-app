@@ -1,7 +1,16 @@
-import { Entity, Column, CreateDateColumn, PrimaryColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  CreateDateColumn,
+  PrimaryColumn,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity('trades')
 export class Trade {
+  @PrimaryGeneratedColumn()
+  id: number;
+
   @PrimaryColumn()
   symbol: string;
 

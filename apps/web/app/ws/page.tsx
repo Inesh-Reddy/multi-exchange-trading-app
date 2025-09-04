@@ -1,32 +1,45 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { trpc } from "../../utils/trpc";
 
 export default function Home() {
-  const [wsMessage, setWsMessage] = useState<string | null>(null);
+  const [wsMessage, setWsMessage] = useState<any>(null);
   const wsRef = useRef<WebSocket | null>(null);
-  const marketData = trpc.data.getMarketData.useQuery();
 
   useEffect(() => {
-    wsRef.current = new WebSocket("ws://localhost:3002");
+    wsRef.current = new WebSocket("ws://localhost:3000/md");
+
+    wsRef.current.binaryType = "arraybuffer";
 
     wsRef.current.onopen = () => {
-      console.log("WebSocket connection established.");
+      console.log("✅ WebSocket connected");
+      wsRef.current?.send(
+        JSON.stringify({ action: "subscribe", symbols: ["BTCUSDT"] }),
+      );
     };
 
     wsRef.current.onmessage = (event) => {
       try {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "marketData") {
-          setWsMessage(msg.message);
+        if (event.data instanceof ArrayBuffer) {
+          console.log("🔹 got binary data:", event.data.byteLength, "bytes");
+        } else {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "marketData") {
+            setWsMessage(msg.payload);
+          } else {
+            console.log("Other msg:", msg);
+          }
         }
       } catch (err) {
-        setWsMessage(event.data);
+        console.error("❌ Failed to parse WS message:", err);
       }
     };
 
-    wsRef.current.onerror = (error) => {
-      console.error("WebSocket error:", error);
+    wsRef.current.onerror = (err) => {
+      console.error("❌ WebSocket error:", err);
+    };
+
+    wsRef.current.onclose = () => {
+      console.log("❌ WebSocket closed");
     };
 
     return () => {
@@ -34,17 +47,14 @@ export default function Home() {
     };
   }, []);
 
-  if (marketData.isLoading) return <div>Loading market data...</div>;
-  if (marketData.isError) {
-    console.error("TRPC Error:", marketData.error);
-    return <div>Error: {marketData.error.message}</div>;
-  }
-
   return (
     <div>
-      <h1>Market Data Binance : Ws</h1>
-      <p>tRPC: {marketData.data}</p>
-      <p>WebSocket: {wsMessage}</p>
+      <h1>Market Data (Binance → WS → Frontend)</h1>
+      {wsMessage ? (
+        <pre>{JSON.stringify(wsMessage, null, 2)}</pre>
+      ) : (
+        <p>Waiting for trades…</p>
+      )}
     </div>
   );
 }

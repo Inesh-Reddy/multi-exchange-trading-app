@@ -9,7 +9,7 @@ export class TimescaleInitService implements OnApplicationBootstrap {
       CREATE EXTENSION IF NOT EXISTS timescaledb;
     `);
 
-    const exists = await this.dataSource.query(`
+    const exists: any[] = await this.dataSource.query(`
       SELECT * FROM timescaledb_information.hypertables WHERE hypertable_name = 'trades';
     `);
 
@@ -20,18 +20,3 @@ export class TimescaleInitService implements OnApplicationBootstrap {
     }
   }
 }
-
-// import { Injectable, OnModuleInit } from '@nestjs/common';
-// import { DataSource } from 'typeorm';
-
-// @Injectable()
-// export class TimescaleInitService implements OnModuleInit {
-//   constructor(private dataSource: DataSource) {}
-
-//   async onModuleInit() {
-//     await this.dataSource.query(`
-//       CREATE EXTENSION IF NOT EXISTS timescaledb;
-//       SELECT create_hypertable('trades', 'ts', chunk_time_interval => interval '1 day', if_not_exists => TRUE);
-//     `);
-//   }
-// }
